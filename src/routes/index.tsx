@@ -22,7 +22,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { SiteHeader } from "@/components/site-header";
-import { demoTrend } from "@/lib/demo-data";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -143,10 +142,10 @@ function Landing() {
 
           <dl className="mt-16 grid max-w-3xl grid-cols-2 gap-6 sm:grid-cols-4">
             {[
-              ["9.4M", "links shortened"],
-              ["180ms", "median redirect"],
-              ["120+", "countries tracked"],
-              ["99.99%", "uptime"],
+              ["Live", "link analytics"],
+              ["Custom", "short aliases"],
+              ["Instant", "QR codes"],
+              ["Private", "by default"],
             ].map(([value, label]) => (
               <div key={label}>
                 <dt className="font-display text-3xl font-bold">{value}</dt>
@@ -168,41 +167,20 @@ function Landing() {
           </div>
           <div className="grid gap-6 p-6 lg:grid-cols-3">
             <div className="lg:col-span-2">
-              <p className="text-sm text-muted-foreground">Clicks, last 14 days</p>
-              <p className="font-display text-4xl font-bold">42,981</p>
-              <div className="mt-4 h-48">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={demoTrend}>
-                    <defs>
-                      <linearGradient id="heroFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="var(--color-chart-1)" stopOpacity={0.6} />
-                        <stop offset="100%" stopColor="var(--color-chart-1)" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <Area
-                      type="monotone"
-                      dataKey="clicks"
-                      stroke="var(--color-chart-1)"
-                      strokeWidth={3}
-                      fill="url(#heroFill)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+              <p className="text-sm text-muted-foreground">Your click history</p>
+              <p className="font-display text-4xl font-bold">Live analytics</p>
+              <div className="mt-4 flex h-48 items-center justify-center rounded-2xl border border-dashed border-border text-sm text-muted-foreground">
+                Sign in to see your click history
               </div>
             </div>
             <div className="space-y-3">
-              {[
-                ["/r/launch-2026", "4,821"],
-                ["/r/pricing", "2,140"],
-                ["/r/docs-api", "1,387"],
-                ["/r/demo-call", "908"],
-              ].map(([slug, clicks]) => (
+              {["Custom aliases", "QR codes", "Device insights", "Referrer insights"].map((label) => (
                 <div
-                  key={slug}
+                  key={label}
                   className="flex items-center justify-between rounded-2xl border border-border bg-background/50 px-4 py-3"
                 >
-                  <span className="font-mono text-sm text-primary">{slug}</span>
-                  <span className="text-sm text-muted-foreground">{clicks}</span>
+                  <span className="text-sm text-primary">{label}</span>
+                  <Check className="h-4 w-4 text-primary" />
                 </div>
               ))}
             </div>
@@ -236,14 +214,14 @@ function Landing() {
         <h2 className="text-4xl font-bold sm:text-5xl">Simple pricing</h2>
         <div className="mt-10 grid gap-4 lg:grid-cols-3">
           {[
-            { name: "Free", price: "$0", perks: ["50 links", "Custom aliases", "QR codes", "14-day analytics"] },
+            { name: "Free", price: "Free", perks: ["Short links", "Custom aliases", "QR codes", "Click analytics"] },
             {
               name: "Pro",
-              price: "$12",
-              perks: ["Unlimited links", "Full analytics history", "Bulk QR export", "Priority redirects"],
+              price: "Pro",
+              perks: ["More links", "Full analytics history", "Bulk QR export", "Priority redirects"],
               featured: true,
             },
-            { name: "Team", price: "$39", perks: ["Everything in Pro", "5 seats", "Shared workspaces", "Audit log"] },
+            { name: "Team", price: "Team", perks: ["Everything in Pro", "Shared workspaces", "Audit log", "Team support"] },
           ].map((tier) => (
             <div
               key={tier.name}
@@ -259,7 +237,6 @@ function Landing() {
               </div>
               <p className="mt-4 font-display text-4xl font-bold">
                 {tier.price}
-                <span className="text-base font-normal text-muted-foreground">/mo</span>
               </p>
               <ul className="mt-6 space-y-2.5 text-sm text-muted-foreground">
                 {tier.perks.map((p) => (
@@ -286,7 +263,7 @@ function Landing() {
           <div className="pointer-events-none absolute inset-0 grid-lines opacity-30" />
           <div className="pointer-events-none absolute left-1/2 top-0 h-64 w-96 -translate-x-1/2 rounded-full bg-primary/25 blur-[120px]" />
           <div className="relative">
-            <h2 className="text-4xl font-bold sm:text-5xl">Shorten your first link in 10 seconds.</h2>
+            <h2 className="text-4xl font-bold sm:text-5xl">Shorten your first link today.</h2>
             <p className="mx-auto mt-4 max-w-lg text-muted-foreground">
               Free to start. No card required. Your dashboard is waiting.
             </p>

@@ -38,28 +38,74 @@ function AuthPage() {
 
   async function signIn(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (error) {
-      toast.error(error.message);
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail || !password) {
+      toast.error("Enter your email and password.");
       return;
     }
-    navigate({ to: "/dashboard", replace: true });
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: normalizedEmail,
+        password,
+      });
+      if (error) {
+        toast.error(formatAuthError(error.message));
+        return;
+      }
+      navigate({ to: "/dashboard", replace: true });
+    } catch (error) {
+      toast.error(formatAuthError(error instanceof Error ? error.message : "Unable to sign in."));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function resendConfirmation() {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) {
+      toast.error("Enter your email address first.");
+      return;
+    }
+    setLoading(true);
+    const { error } = await supabase.auth.resend({ type: "signup", email: normalizedEmail });
+    setLoading(false);
+    if (error) {
+      toast.error(formatAuthError(error.message));
+      return;
+    }
+    toast.success("A new confirmation email was sent.");
   }
 
   async function signUp(e: React.FormEvent) {
     e.preventDefault();
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail || password.length < 6) {
+      toast.error("Use a valid email and a password with at least 6 characters.");
+      return;
+    }
     setLoading(true);
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: window.location.origin },
-    });
-    setLoading(false);
-    if (error) return toast.error(error.message);
-    if (data.session) return navigate({ to: "/dashboard", replace: true });
-    setSent(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: normalizedEmail,
+        password,
+        options: { emailRedirectTo: window.location.origin },
+      });
+      if (error) {
+        toast.error(formatAuthError(error.message));
+        return;
+      }
+      if (data.session) {
+        navigate({ to: "/dashboard", replace: true });
+        return;
+      }
+      setEmail(normalizedEmail);
+      setSent(true);
+    } catch (error) {
+      toast.error(formatAuthError(error instanceof Error ? error.message : "Unable to create your account."));
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function google() {
@@ -90,9 +136,15 @@ function AuthPage() {
                 We sent a confirmation link to <span className="text-foreground">{email}</span>.
                 Click it to activate your account.
               </p>
-              <Button variant="ghost" onClick={() => setSent(false)}>
-                Back
-              </Button>
+              <div className="flex flex-col gap-2">
+                <Button variant="secondary" onClick={resendConfirmation} disabled={loading}>
+                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Resend confirmation email
+                </Button>
+                <Button variant="ghost" onClick={() => setSent(false)}>
+                  Back
+                </Button>
+              </div>
             </div>
           ) : (
             <Tabs defaultValue="signin">
@@ -155,6 +207,23 @@ function AuthPage() {
       </div>
     </main>
   );
+}
+
+function formatAuthError(message: string) {
+  const normalized = message.toLowerCase();
+  if (normalized.includes("email not confirmed")) {
+    return "Confirm your email from the message we sent, then sign in again.";
+  }
+  if (normalized.includes("invalid login credentials")) {
+    return "That email or password is incorrect. Create an account first if you are new here.";
+  }
+  if (normalized.includes("rate limit") || normalized.includes("too many")) {
+    return "Too many attempts. Wait a moment and try again.";
+  }
+  if (normalized.includes("failed to fetch") || normalized.includes("network")) {
+    return "Unable to reach the sign-in service. Check your connection and try again.";
+  }
+  return message;
 }
 
 function Field({

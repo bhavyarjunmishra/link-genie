@@ -29,9 +29,7 @@ import {
   QrCode,
   Search,
   Share2,
-  Sparkles,
   Trash2,
-  Users,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -48,7 +46,6 @@ import {
 } from "@/components/ui/dialog";
 import { Logo } from "@/components/site-header";
 import { supabase } from "@/integrations/supabase/client";
-import { demoCountries, demoDevices, demoLinks, demoSources } from "@/lib/demo-data";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -117,7 +114,7 @@ function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clicks")
-        .select("link_id, created_at, device, referrer")
+        .select("link_id, created_at, device, referrer, country")
         .order("created_at", { ascending: false })
         .limit(2000);
       if (error) throw error;
@@ -127,7 +124,6 @@ function Dashboard() {
 
   const links = linksQuery.data ?? [];
   const clicks = clicksQuery.data ?? [];
-  const isDemo = links.length === 0;
 
   const clicksByLink = useMemo(() => {
     const map = new Map<string, number>();
@@ -136,17 +132,7 @@ function Dashboard() {
   }, [clicks]);
 
   const rows = useMemo(() => {
-    const list = isDemo
-      ? demoLinks.map((d) => ({
-          id: d.slug,
-          slug: d.slug,
-          target_url: d.target_url,
-          title: d.title,
-          is_active: true,
-          created_at: d.created_at,
-          clicks: d.clicks,
-        }))
-      : links.map((l) => ({ ...l, clicks: clicksByLink.get(l.id) ?? 0 }));
+    const list = links.map((l) => ({ ...l, clicks: clicksByLink.get(l.id) ?? 0 }));
     const q = search.trim().toLowerCase();
     return q
       ? list.filter(
@@ -156,42 +142,33 @@ function Dashboard() {
             (l.title ?? "").toLowerCase().includes(q),
         )
       : list;
-  }, [isDemo, links, clicksByLink, search]);
+  }, [links, clicksByLink, search]);
 
   const trend = useMemo(() => {
     const days = Array.from({ length: 14 }, (_, i) => {
       const d = new Date(Date.now() - (13 - i) * 86_400_000);
       return { key: d.toISOString().slice(0, 10), day: d.toLocaleDateString(undefined, { month: "short", day: "numeric" }), clicks: 0 };
     });
-    if (isDemo) {
-      return days.map((d, i) => ({
-        ...d,
-        clicks: 180 + Math.round(Math.sin(i / 2.1) * 70 + i * 14),
-      }));
-    }
     const index = new Map(days.map((d) => [d.key, d]));
     for (const c of clicks) {
       const entry = index.get(String(c.created_at).slice(0, 10));
       if (entry) entry.clicks += 1;
     }
     return days;
-  }, [clicks, isDemo]);
+  }, [clicks]);
 
-  const totalClicks = isDemo ? demoLinks.reduce((s, l) => s + l.clicks, 0) : clicks.length;
+  const totalClicks = clicks.length;
   const last7 = trend.slice(7).reduce((s, d) => s + d.clicks, 0);
   const prev7 = trend.slice(0, 7).reduce((s, d) => s + d.clicks, 0);
-  const delta = prev7 === 0 ? 100 : Math.round(((last7 - prev7) / prev7) * 100);
+  const delta = prev7 === 0 ? null : Math.round(((last7 - prev7) / prev7) * 100);
 
   const devices = useMemo(() => {
-    if (isDemo) return demoDevices;
     const map = new Map<string, number>();
     for (const c of clicks) map.set(c.device ?? "Unknown", (map.get(c.device ?? "Unknown") ?? 0) + 1);
-    const out = [...map].map(([name, value]) => ({ name, value }));
-    return out.length ? out : demoDevices;
-  }, [clicks, isDemo]);
+    return [...map].map(([name, value]) => ({ name, value }));
+  }, [clicks]);
 
   const sources = useMemo(() => {
-    if (isDemo) return demoSources;
     const map = new Map<string, number>();
     for (const c of clicks) {
       let name = "Direct";
@@ -204,9 +181,20 @@ function Dashboard() {
       }
       map.set(name, (map.get(name) ?? 0) + 1);
     }
-    const out = [...map].map(([name, value]) => ({ name, value })).slice(0, 5);
-    return out.length ? out : demoSources;
-  }, [clicks, isDemo]);
+    return [...map].map(([name, value]) => ({ name, value })).slice(0, 5);
+  }, [clicks]);
+
+  const countries = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const c of clicks) {
+      const name = c.country ?? "Unknown";
+      map.set(name, (map.get(name) ?? 0) + 1);
+    }
+    return [...map]
+      .map(([name, value]) => ({ name, value, percentage: totalClicks ? Math.round((value / totalClicks) * 100) : 0 }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5);
+  }, [clicks, totalClicks]);
 
   async function createLink(e: React.FormEvent) {
     e.preventDefault();
@@ -242,29 +230,7 @@ function Dashboard() {
     queryClient.invalidateQueries({ queryKey: ["links"] });
   }
 
-  async function loadDemo() {
-    const { data: userData } = await supabase.auth.getUser();
-    const { error } = await supabase.from("links").insert(
-      demoLinks.map((d) => ({
-        user_id: userData.user!.id,
-        slug: `${d.slug}-${randomSlug().slice(0, 3)}`,
-        target_url: d.target_url,
-        title: d.title,
-      })),
-    );
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    toast.success("Demo links added to your account");
-    queryClient.invalidateQueries({ queryKey: ["links"] });
-  }
-
   async function removeLink(id: string) {
-    if (isDemo) {
-      toast.info("This is sample data — create a link to manage your own.");
-      return;
-    }
     const { error } = await supabase.from("links").delete().eq("id", id);
     if (error) {
       toast.error(error.message);
@@ -275,7 +241,6 @@ function Dashboard() {
   }
 
   async function toggleActive(row: LinkRow) {
-    if (isDemo) return;
     await supabase.from("links").update({ is_active: !row.is_active }).eq("id", row.id);
     queryClient.invalidateQueries({ queryKey: ["links"] });
   }
@@ -310,16 +275,9 @@ function Dashboard() {
           <div>
             <h1 className="text-3xl font-bold sm:text-4xl">Your links</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {isDemo
-                ? "Showing sample data — create your first link to make it yours."
-                : `${links.length} link${links.length === 1 ? "" : "s"} · ${totalClicks} total clicks`}
+              {links.length} link{links.length === 1 ? "" : "s"} · {totalClicks} total clicks
             </p>
           </div>
-          {isDemo && (
-            <Button variant="secondary" onClick={loadDemo}>
-              <Sparkles className="mr-2 h-4 w-4" /> Load demo links into my account
-            </Button>
-          )}
         </div>
 
         {/* Create */}
@@ -372,13 +330,14 @@ function Dashboard() {
         {/* Stats */}
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Stat icon={MousePointerClick} label="Total clicks" value={totalClicks.toLocaleString()} />
-          <Stat icon={BarChart3} label="Clicks last 7 days" value={last7.toLocaleString()} hint={`${delta >= 0 ? "+" : ""}${delta}% vs prior week`} />
-          <Stat icon={Link2} label="Active links" value={String(rows.filter((r) => r.is_active).length)} />
           <Stat
-            icon={Users}
-            label="Est. unique visitors"
-            value={Math.round(totalClicks * 0.72).toLocaleString()}
+            icon={BarChart3}
+            label="Clicks last 7 days"
+            value={last7.toLocaleString()}
+            hint={delta === null ? "No prior clicks to compare" : `${delta >= 0 ? "+" : ""}${delta}% vs prior week`}
           />
+          <Stat icon={Link2} label="Active links" value={String(links.filter((link) => link.is_active).length)} />
+          <Stat icon={Link2} label="Total links" value={links.length.toLocaleString()} />
         </section>
 
         {/* Charts */}
@@ -494,16 +453,18 @@ function Dashboard() {
             <h2 className="text-lg font-semibold">Top countries</h2>
             <p className="mb-4 text-sm text-muted-foreground">Share of clicks</p>
             <ul className="space-y-3">
-              {demoCountries.map((c) => (
+              {countries.length === 0 ? (
+                <li className="text-sm text-muted-foreground">No country data recorded yet.</li>
+              ) : countries.map((c) => (
                 <li key={c.name} className="space-y-1.5">
                   <div className="flex justify-between text-sm">
                     <span>{c.name}</span>
-                    <span className="text-muted-foreground">{c.value}%</span>
+                    <span className="text-muted-foreground">{c.percentage}%</span>
                   </div>
                   <div className="h-2 rounded-full bg-muted">
                     <div
                       className="h-2 rounded-full bg-primary"
-                      style={{ width: `${c.value * 2}%`, maxWidth: "100%" }}
+                      style={{ width: `${c.percentage}%`, maxWidth: "100%" }}
                     />
                   </div>
                 </li>
