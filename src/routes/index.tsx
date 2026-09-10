@@ -98,6 +98,9 @@ function Landing() {
           <Badge variant="secondary" className="mb-6 rounded-full px-3 py-1 text-xs">
             <Sparkles className="mr-1.5 h-3.5 w-3.5 text-primary" /> Links, QR codes & analytics
           </Badge>
+          <p className="mb-4 text-sm font-semibold uppercase tracking-widest text-primary">
+            Absolutely free to use
+          </p>
           <h1 className="max-w-4xl text-5xl font-bold leading-[0.95] sm:text-7xl lg:text-8xl">
             Long links are <span className="text-gradient">dead weight.</span>
           </h1>
@@ -209,54 +212,6 @@ function Landing() {
         </div>
       </section>
 
-      {/* Pricing */}
-      <section id="pricing" className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6">
-        <h2 className="text-4xl font-bold sm:text-5xl">Simple pricing</h2>
-        <div className="mt-10 grid gap-4 lg:grid-cols-3">
-          {[
-            { name: "Free", price: "Free", perks: ["Short links", "Custom aliases", "QR codes", "Click analytics"] },
-            {
-              name: "Pro",
-              price: "Pro",
-              perks: ["More links", "Full analytics history", "Bulk QR export", "Priority redirects"],
-              featured: true,
-            },
-            { name: "Team", price: "Team", perks: ["Everything in Pro", "Shared workspaces", "Audit log", "Team support"] },
-          ].map((tier) => (
-            <div
-              key={tier.name}
-              className={`rounded-3xl border p-7 ${
-                tier.featured
-                  ? "border-primary/60 bg-card glow-primary"
-                  : "border-border bg-card"
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">{tier.name}</h3>
-                {tier.featured && <Badge>Most popular</Badge>}
-              </div>
-              <p className="mt-4 font-display text-4xl font-bold">
-                {tier.price}
-              </p>
-              <ul className="mt-6 space-y-2.5 text-sm text-muted-foreground">
-                {tier.perks.map((p) => (
-                  <li key={p} className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-primary" /> {p}
-                  </li>
-                ))}
-              </ul>
-              <Button
-                asChild
-                className="mt-7 w-full font-semibold"
-                variant={tier.featured ? "default" : "secondary"}
-              >
-                <Link to="/auth">Get started</Link>
-              </Button>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* CTA */}
       <section className="mx-auto w-full max-w-6xl px-4 pb-20 sm:px-6">
         <div className="relative overflow-hidden rounded-[2rem] border border-border bg-card p-10 text-center sm:p-16">
@@ -265,7 +220,7 @@ function Landing() {
           <div className="relative">
             <h2 className="text-4xl font-bold sm:text-5xl">Shorten your first link today.</h2>
             <p className="mx-auto mt-4 max-w-lg text-muted-foreground">
-              Free to start. No card required. Your dashboard is waiting.
+              Absolutely free to use. No card required. Your dashboard is waiting.
             </p>
             <Button asChild size="lg" className="mt-8 h-14 px-8 text-base font-semibold">
               <Link to="/auth">

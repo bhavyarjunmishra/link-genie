@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Logo } from "@/components/site-header";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -108,18 +107,6 @@ function AuthPage() {
     }
   }
 
-  async function google() {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) {
-      toast.error("Google sign-in failed. Try again.");
-      return;
-    }
-    if (result.redirected) return;
-    navigate({ to: "/dashboard", replace: true });
-  }
-
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-16">
       <div className="pointer-events-none absolute inset-0 grid-lines opacity-40" />
@@ -187,15 +174,6 @@ function AuthPage() {
                 </form>
               </TabsContent>
 
-              <div className="my-6 flex items-center gap-3 text-xs uppercase tracking-widest text-muted-foreground">
-                <span className="h-px flex-1 bg-border" />
-                or
-                <span className="h-px flex-1 bg-border" />
-              </div>
-
-              <Button variant="secondary" className="w-full" onClick={google}>
-                Continue with Google
-              </Button>
             </Tabs>
           )}
         </div>

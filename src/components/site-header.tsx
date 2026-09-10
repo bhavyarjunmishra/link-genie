@@ -38,8 +38,8 @@ export function SiteHeader() {
           <a href="/#analytics" className="transition-colors hover:text-foreground">
             Analytics
           </a>
-          <a href="/#pricing" className="transition-colors hover:text-foreground">
-            Pricing
+            <a href="/#features" className="transition-colors hover:text-foreground">
+              Absolutely free
           </a>
         </nav>
         <div className="flex items-center gap-2">
