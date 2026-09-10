@@ -79,11 +79,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Snaplink — Short links with real analytics" },
+      { title: "Link Genie — Short links with real analytics" },
       {
         name: "description",
         content:
-          "Snaplink turns long URLs into bold short links with custom aliases, QR codes and click analytics.",
+          "Link Genie turns long URLs into bold short links with custom aliases, QR codes and click analytics.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

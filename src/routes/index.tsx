@@ -26,13 +26,13 @@ import { SiteHeader } from "@/components/site-header";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Snaplink — Bold short links, QR codes & click analytics" },
+      { title: "Link Genie — Bold short links, QR codes & click analytics" },
       {
         name: "description",
         content:
           "Shorten any URL, claim a custom alias, generate a QR code and watch clicks roll in on a live analytics dashboard.",
       },
-      { property: "og:title", content: "Snaplink — Bold short links & analytics" },
+      { property: "og:title", content: "Link Genie — Bold short links & analytics" },
       {
         property: "og:description",
         content: "Custom aliases, instant QR codes and real-time click analytics in one dashboard.",
@@ -81,7 +81,7 @@ function Landing() {
   const preview = useMemo(() => {
     const raw = url.trim().replace(/^https?:\/\//i, "").split("/")[0] ?? "";
     const seed = raw ? raw.split(".")[0]!.slice(0, 8).replace(/[^a-z0-9]/gi, "") : "";
-    return `snaplink.app/r/${seed || "your-alias"}`;
+    return `linkgenie.app/r/${seed || "your-alias"}`;
   }, [url]);
 
   return (
@@ -102,7 +102,7 @@ function Landing() {
             Long links are <span className="text-gradient">dead weight.</span>
           </h1>
           <p className="mt-6 max-w-xl text-lg text-muted-foreground">
-            Snaplink turns any messy URL into a short, branded link with a custom alias, a
+            Link Genie turns any messy URL into a short, branded link with a custom alias, a
             print-ready QR code and analytics that tell you exactly what's working.
           </p>
 
@@ -163,7 +163,7 @@ function Landing() {
             <span className="h-3 w-3 rounded-full bg-destructive/70" />
             <span className="h-3 w-3 rounded-full bg-chart-4/70" />
             <span className="h-3 w-3 rounded-full bg-primary/70" />
-            <span className="ml-3 text-sm text-muted-foreground">snaplink.app/dashboard</span>
+            <span className="ml-3 text-sm text-muted-foreground">linkgenie.app/dashboard</span>
           </div>
           <div className="grid gap-6 p-6 lg:grid-cols-3">
             <div className="lg:col-span-2">
@@ -278,7 +278,7 @@ function Landing() {
 
       <footer className="border-t border-border py-8">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center justify-between gap-3 px-4 text-sm text-muted-foreground sm:flex-row sm:px-6">
-          <p>© {new Date().getFullYear()} Snaplink</p>
+          <p>© {new Date().getFullYear()} Link Genie</p>
           <p>Built for people who share links for a living.</p>
         </div>
       </footer>

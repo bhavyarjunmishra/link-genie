@@ -11,7 +11,7 @@ export function Logo({ className = "" }: { className?: string }) {
       <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
         <Link2 className="h-5 w-5" />
       </span>
-      <span className="font-display text-lg font-bold tracking-tight">Snaplink</span>
+      <span className="font-display text-lg font-bold tracking-tight">Link Genie</span>
     </Link>
   );
 }

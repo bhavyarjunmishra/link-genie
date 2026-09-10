@@ -50,9 +50,9 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "Dashboard — Snaplink" },
+      { title: "Dashboard — Link Genie" },
       { name: "description", content: "Create short links, generate QR codes and track clicks." },
-      { property: "og:title", content: "Dashboard — Snaplink" },
+      { property: "og:title", content: "Dashboard — Link Genie" },
       { property: "og:description", content: "Your links, QR codes and click analytics." },
     ],
   }),
@@ -527,7 +527,7 @@ function Dashboard() {
                         label="Share"
                         icon={Share2}
                         onClick={async () => {
-                          const shareData = { title: row.title ?? "Snaplink", url: shortUrl(row.slug) };
+                          const shareData = { title: row.title ?? "Link Genie", url: shortUrl(row.slug) };
                           if (navigator.share) await navigator.share(shareData).catch(() => {});
                           else {
                             await navigator.clipboard.writeText(shareData.url);
@@ -671,7 +671,7 @@ function QrDialog({
           </div>
         )}
         <Button asChild className="font-semibold">
-          <a href={dataUrl} download={`snaplink-${link?.slug}.png`}>
+          <a href={dataUrl} download={`link-genie-${link?.slug}.png`}>
             Download PNG
           </a>
         </Button>

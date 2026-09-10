@@ -14,9 +14,9 @@ import { lovable } from "@/integrations/lovable";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in — Snaplink" },
-      { name: "description", content: "Sign in to Snaplink to create short links, QR codes and track clicks." },
-      { property: "og:title", content: "Sign in — Snaplink" },
+      { title: "Sign in — Link Genie" },
+      { name: "description", content: "Sign in to Link Genie to create short links, QR codes and track clicks." },
+      { property: "og:title", content: "Sign in — Link Genie" },
       { property: "og:description", content: "Create short links, QR codes and track every click." },
     ],
   }),
