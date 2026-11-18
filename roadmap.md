@@ -1,0 +1,5 @@
+- [ ] Remove sign-in pages and guards; make link dashboard publicly usable.
+- [ ] Replace account ownership with private browser-key access and safe database operations.
+- [ ] Default to random aliases so destination names never leak into short paths.
+- [ ] Fix landing-page shortening actions and validate the no-login flow.
+- [ ] Resolve carried-forward build errors and apply the required dependency update.
