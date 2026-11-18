@@ -1,10 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import {
-  Area,
-  AreaChart,
-  ResponsiveContainer,
-} from "recharts";
+import { Area, AreaChart, ResponsiveContainer } from "recharts";
 import {
   ArrowRight,
   BarChart3,
@@ -66,7 +62,7 @@ const features = [
   {
     icon: Shield,
     title: "Private by default",
-    body: "Your links and stats belong to your account only — nobody else can list or edit them.",
+    body: "Manage your links and stats from this browser, with no account needed.",
   },
   {
     icon: Globe2,
@@ -79,8 +75,17 @@ function Landing() {
   const [url, setUrl] = useState("");
   const [copied, setCopied] = useState(false);
   const preview = useMemo(() => {
-    const raw = url.trim().replace(/^https?:\/\//i, "").split("/")[0] ?? "";
-    const seed = raw ? raw.split(".")[0]!.slice(0, 8).replace(/[^a-z0-9]/gi, "") : "";
+    const raw =
+      url
+        .trim()
+        .replace(/^https?:\/\//i, "")
+        .split("/")[0] ?? "";
+    const seed = raw
+      ? raw
+          .split(".")[0]!
+          .slice(0, 8)
+          .replace(/[^a-z0-9]/gi, "")
+      : "";
     return `linkgenie.app/r/${seed || "your-alias"}`;
   }, [url]);
 
@@ -118,7 +123,7 @@ function Landing() {
                 className="h-14 border-0 bg-transparent text-base focus-visible:ring-0"
               />
               <Button asChild size="lg" className="h-14 px-7 text-base font-semibold">
-                <Link to="/auth">
+                <Link to="/dashboard" search={{ url }}>
                   Shorten it <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
@@ -138,7 +143,11 @@ function Landing() {
                 setTimeout(() => setCopied(false), 1500);
               }}
             >
-              {copied ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5" />}
+              {copied ? (
+                <Check className="h-3.5 w-3.5 text-primary" />
+              ) : (
+                <Copy className="h-3.5 w-3.5" />
+              )}
               {copied ? "Copied" : "Copy"}
             </button>
           </div>
@@ -173,19 +182,21 @@ function Landing() {
               <p className="text-sm text-muted-foreground">Your click history</p>
               <p className="font-display text-4xl font-bold">Live analytics</p>
               <div className="mt-4 flex h-48 items-center justify-center rounded-2xl border border-dashed border-border text-sm text-muted-foreground">
-                Sign in to see your click history
+                Open your dashboard to see your click history
               </div>
             </div>
             <div className="space-y-3">
-              {["Custom aliases", "QR codes", "Device insights", "Referrer insights"].map((label) => (
-                <div
-                  key={label}
-                  className="flex items-center justify-between rounded-2xl border border-border bg-background/50 px-4 py-3"
-                >
-                  <span className="text-sm text-primary">{label}</span>
-                  <Check className="h-4 w-4 text-primary" />
-                </div>
-              ))}
+              {["Custom aliases", "QR codes", "Device insights", "Referrer insights"].map(
+                (label) => (
+                  <div
+                    key={label}
+                    className="flex items-center justify-between rounded-2xl border border-border bg-background/50 px-4 py-3"
+                  >
+                    <span className="text-sm text-primary">{label}</span>
+                    <Check className="h-4 w-4 text-primary" />
+                  </div>
+                ),
+              )}
             </div>
           </div>
         </div>
@@ -223,8 +234,8 @@ function Landing() {
               Absolutely free to use. No card required. Your dashboard is waiting.
             </p>
             <Button asChild size="lg" className="mt-8 h-14 px-8 text-base font-semibold">
-              <Link to="/auth">
-                Create your account <ArrowRight className="ml-2 h-4 w-4" />
+              <Link to="/dashboard">
+                Open your dashboard <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
           </div>

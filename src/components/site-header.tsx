@@ -1,9 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
 import { Link2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 
 export function Logo({ className = "" }: { className?: string }) {
   return (
@@ -17,16 +15,6 @@ export function Logo({ className = "" }: { className?: string }) {
 }
 
 export function SiteHeader() {
-  const [email, setEmail] = useState<string | null>(null);
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
-    const { data } = supabase.auth.onAuthStateChange((_e, session) =>
-      setEmail(session?.user.email ?? null),
-    );
-    return () => data.subscription.unsubscribe();
-  }, []);
-
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
@@ -38,25 +26,14 @@ export function SiteHeader() {
           <a href="/#analytics" className="transition-colors hover:text-foreground">
             Analytics
           </a>
-            <a href="/#features" className="transition-colors hover:text-foreground">
-              Absolutely free
+          <a href="/#features" className="transition-colors hover:text-foreground">
+            Absolutely free
           </a>
         </nav>
         <div className="flex items-center gap-2">
-          {email ? (
-            <Button asChild size="sm" className="font-semibold">
-              <Link to="/dashboard">Dashboard</Link>
-            </Button>
-          ) : (
-            <>
-              <Button asChild variant="ghost" size="sm">
-                <Link to="/auth">Sign in</Link>
-              </Button>
-              <Button asChild size="sm" className="font-semibold">
-                <Link to="/auth">Start free</Link>
-              </Button>
-            </>
-          )}
+          <Button asChild size="sm" className="font-semibold">
+            <Link to="/dashboard">Dashboard</Link>
+          </Button>
         </div>
       </div>
     </header>
