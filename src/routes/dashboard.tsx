@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -45,9 +45,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Logo } from "@/components/site-header";
-import { supabase } from "@/integrations/supabase/client";
+import { listLinks, addLink, changeLink } from "@/lib/links";
 
-export const Route = createFileRoute("/_authenticated/dashboard")({
+export const Route = createFileRoute("/dashboard")({
+  validateSearch: (search: Record<string, unknown>): { url?: string } => ({
+    url: typeof search["url"] === "string" ? search["url"] : "",
+  }),
   head: () => ({
     meta: [
       { title: "Dashboard — Link Genie" },
@@ -81,49 +84,27 @@ function randomSlug() {
 }
 
 function Dashboard() {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [origin, setOrigin] = useState("");
-  const [email, setEmail] = useState("");
   const [search, setSearch] = useState("");
   const [qrLink, setQrLink] = useState<LinkRow | null>(null);
   const [creating, setCreating] = useState(false);
-  const [url, setUrl] = useState("");
+  const initialSearch = Route.useSearch();
+  const [url, setUrl] = useState(initialSearch.url ?? "");
   const [alias, setAlias] = useState("");
   const [title, setTitle] = useState("");
 
   useEffect(() => {
     setOrigin(window.location.origin);
-    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? ""));
   }, []);
 
   const linksQuery = useQuery({
     queryKey: ["links"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("links")
-        .select("id, slug, target_url, title, is_active, created_at")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as LinkRow[];
-    },
+    queryFn: () => listLinks(),
+    refetchInterval: 30000,
   });
-
-  const clicksQuery = useQuery({
-    queryKey: ["clicks"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("clicks")
-        .select("link_id, created_at, device, referrer, country")
-        .order("created_at", { ascending: false })
-        .limit(2000);
-      if (error) throw error;
-      return data ?? [];
-    },
-  });
-
-  const links = linksQuery.data ?? [];
-  const clicks = clicksQuery.data ?? [];
+  const links = useMemo(() => linksQuery.data?.links ?? [], [linksQuery.data]);
+  const clicks = useMemo(() => linksQuery.data?.clicks ?? [], [linksQuery.data]);
 
   const clicksByLink = useMemo(() => {
     const map = new Map<string, number>();
@@ -147,7 +128,11 @@ function Dashboard() {
   const trend = useMemo(() => {
     const days = Array.from({ length: 14 }, (_, i) => {
       const d = new Date(Date.now() - (13 - i) * 86_400_000);
-      return { key: d.toISOString().slice(0, 10), day: d.toLocaleDateString(undefined, { month: "short", day: "numeric" }), clicks: 0 };
+      return {
+        key: d.toISOString().slice(0, 10),
+        day: d.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+        clicks: 0,
+      };
     });
     const index = new Map(days.map((d) => [d.key, d]));
     for (const c of clicks) {
@@ -164,7 +149,8 @@ function Dashboard() {
 
   const devices = useMemo(() => {
     const map = new Map<string, number>();
-    for (const c of clicks) map.set(c.device ?? "Unknown", (map.get(c.device ?? "Unknown") ?? 0) + 1);
+    for (const c of clicks)
+      map.set(c.device ?? "Unknown", (map.get(c.device ?? "Unknown") ?? 0) + 1);
     return [...map].map(([name, value]) => ({ name, value }));
   }, [clicks]);
 
@@ -191,7 +177,11 @@ function Dashboard() {
       map.set(name, (map.get(name) ?? 0) + 1);
     }
     return [...map]
-      .map(([name, value]) => ({ name, value, percentage: totalClicks ? Math.round((value / totalClicks) * 100) : 0 }))
+      .map(([name, value]) => ({
+        name,
+        value,
+        percentage: totalClicks ? Math.round((value / totalClicks) * 100) : 0,
+      }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 5);
   }, [clicks, totalClicks]);
@@ -208,48 +198,41 @@ function Dashboard() {
       return;
     }
     setCreating(true);
-    const { data: userData } = await supabase.auth.getUser();
-    const slug = (alias.trim() || randomSlug()).replace(/[^a-zA-Z0-9-_]/g, "");
-    const { error } = await supabase.from("links").insert({
-      user_id: userData.user!.id,
-      slug,
-      target_url: target,
-      title: title.trim() || null,
-    });
-    setCreating(false);
-    if (error) {
+    try {
+      const created = await addLink({
+        data: { target_url: target, alias: alias.trim(), title: title.trim() },
+      });
+      setUrl("");
+      setAlias("");
+      setTitle("");
+      toast.success(`Short link /r/${created.slug} created`);
+      await queryClient.invalidateQueries({ queryKey: ["links"] });
+    } catch (error) {
       toast.error(
-        error.message.includes("duplicate") ? "That alias is already taken." : error.message,
+        error instanceof Error ? error.message : "Unable to create link. Please try again.",
       );
-      return;
+    } finally {
+      setCreating(false);
     }
-    setUrl("");
-    setAlias("");
-    setTitle("");
-    toast.success(`Short link /r/${slug} created`);
-    queryClient.invalidateQueries({ queryKey: ["links"] });
   }
 
   async function removeLink(id: string) {
-    const { error } = await supabase.from("links").delete().eq("id", id);
-    if (error) {
-      toast.error(error.message);
-      return;
+    try {
+      await changeLink({ data: { id } });
+      toast.success("Link deleted");
+      await queryClient.invalidateQueries({ queryKey: ["links"] });
+    } catch {
+      toast.error("Unable to delete link. Please try again.");
     }
-    toast.success("Link deleted");
-    queryClient.invalidateQueries({ queryKey: ["links"] });
   }
 
   async function toggleActive(row: LinkRow) {
-    await supabase.from("links").update({ is_active: !row.is_active }).eq("id", row.id);
-    queryClient.invalidateQueries({ queryKey: ["links"] });
-  }
-
-  async function signOut() {
-    await queryClient.cancelQueries();
-    queryClient.clear();
-    await supabase.auth.signOut();
-    navigate({ to: "/auth", replace: true });
+    try {
+      await changeLink({ data: { id: row.id, active: !row.is_active } });
+      await queryClient.invalidateQueries({ queryKey: ["links"] });
+    } catch {
+      toast.error("Unable to update link. Please try again.");
+    }
   }
 
   const shortUrl = (slug: string) => `${origin}/r/${slug}`;
@@ -259,14 +242,7 @@ function Dashboard() {
       <header className="sticky top-0 z-40 border-b border-border/60 bg-background/85 backdrop-blur-xl">
         <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
           <Logo />
-          <div className="flex items-center gap-3">
-            <span className="hidden max-w-[180px] truncate text-sm text-muted-foreground sm:block">
-              {email}
-            </span>
-            <Button variant="secondary" size="sm" onClick={signOut}>
-              Sign out
-            </Button>
-          </div>
+          <span className="text-sm text-muted-foreground">No account needed</span>
         </div>
       </header>
 
@@ -282,6 +258,9 @@ function Dashboard() {
 
         {/* Create */}
         <section className="rounded-3xl border border-border bg-card p-5 sm:p-7">
+          <p className="mb-4 text-sm text-muted-foreground">
+            Your links are saved for this browser. Clearing cookies removes access to manage them.
+          </p>
           <form onSubmit={createLink} className="grid gap-4 lg:grid-cols-[2fr_1fr_1fr_auto]">
             <div className="space-y-2">
               <Label htmlFor="url">Destination URL</Label>
@@ -329,14 +308,26 @@ function Dashboard() {
 
         {/* Stats */}
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <Stat icon={MousePointerClick} label="Total clicks" value={totalClicks.toLocaleString()} />
+          <Stat
+            icon={MousePointerClick}
+            label="Total clicks"
+            value={totalClicks.toLocaleString()}
+          />
           <Stat
             icon={BarChart3}
             label="Clicks last 7 days"
             value={last7.toLocaleString()}
-            hint={delta === null ? "No prior clicks to compare" : `${delta >= 0 ? "+" : ""}${delta}% vs prior week`}
+            hint={
+              delta === null
+                ? "No prior clicks to compare"
+                : `${delta >= 0 ? "+" : ""}${delta}% vs prior week`
+            }
           />
-          <Stat icon={Link2} label="Active links" value={String(links.filter((link) => link.is_active).length)} />
+          <Stat
+            icon={Link2}
+            label="Active links"
+            value={String(links.filter((link) => link.is_active).length)}
+          />
           <Stat icon={Link2} label="Total links" value={links.length.toLocaleString()} />
         </section>
 
@@ -355,8 +346,20 @@ function Dashboard() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid stroke="var(--color-border)" vertical={false} />
-                  <XAxis dataKey="day" tickLine={false} axisLine={false} fontSize={12} stroke="var(--color-muted-foreground)" />
-                  <YAxis tickLine={false} axisLine={false} fontSize={12} stroke="var(--color-muted-foreground)" width={32} />
+                  <XAxis
+                    dataKey="day"
+                    tickLine={false}
+                    axisLine={false}
+                    fontSize={12}
+                    stroke="var(--color-muted-foreground)"
+                  />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    fontSize={12}
+                    stroke="var(--color-muted-foreground)"
+                    width={32}
+                  />
                   <Tooltip
                     contentStyle={{
                       background: "var(--color-popover)",
@@ -455,20 +458,22 @@ function Dashboard() {
             <ul className="space-y-3">
               {countries.length === 0 ? (
                 <li className="text-sm text-muted-foreground">No country data recorded yet.</li>
-              ) : countries.map((c) => (
-                <li key={c.name} className="space-y-1.5">
-                  <div className="flex justify-between text-sm">
-                    <span>{c.name}</span>
-                    <span className="text-muted-foreground">{c.percentage}%</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-muted">
-                    <div
-                      className="h-2 rounded-full bg-primary"
-                      style={{ width: `${c.percentage}%`, maxWidth: "100%" }}
-                    />
-                  </div>
-                </li>
-              ))}
+              ) : (
+                countries.map((c) => (
+                  <li key={c.name} className="space-y-1.5">
+                    <div className="flex justify-between text-sm">
+                      <span>{c.name}</span>
+                      <span className="text-muted-foreground">{c.percentage}%</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted">
+                      <div
+                        className="h-2 rounded-full bg-primary"
+                        style={{ width: `${c.percentage}%`, maxWidth: "100%" }}
+                      />
+                    </div>
+                  </li>
+                ))
+              )}
             </ul>
           </div>
         </section>
@@ -488,12 +493,21 @@ function Dashboard() {
             </div>
           </div>
 
-          {linksQuery.isLoading ? (
+          {linksQuery.isError ? (
+            <div role="alert" className="p-10 text-center text-sm">
+              <p>Unable to load your links. Please try again.</p>
+              <Button variant="secondary" className="mt-3" onClick={() => linksQuery.refetch()}>
+                Retry
+              </Button>
+            </div>
+          ) : linksQuery.isLoading ? (
             <div className="p-10 text-center text-muted-foreground">
               <Loader2 className="mx-auto h-5 w-5 animate-spin" />
             </div>
           ) : rows.length === 0 ? (
-            <p className="p-10 text-center text-sm text-muted-foreground">No links match that search.</p>
+            <p className="p-10 text-center text-sm text-muted-foreground">
+              No links match that search.
+            </p>
           ) : (
             <ul className="divide-y divide-border">
               {rows.map((row) => (
@@ -518,8 +532,12 @@ function Dashboard() {
 
                   <div className="flex items-center gap-6">
                     <div className="text-right">
-                      <p className="font-display text-xl font-bold">{row.clicks.toLocaleString()}</p>
-                      <p className="text-xs uppercase tracking-wide text-muted-foreground">clicks</p>
+                      <p className="font-display text-xl font-bold">
+                        {row.clicks.toLocaleString()}
+                      </p>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                        clicks
+                      </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-1.5">
                       <CopyButton value={shortUrl(row.slug)} />
@@ -527,7 +545,10 @@ function Dashboard() {
                         label="Share"
                         icon={Share2}
                         onClick={async () => {
-                          const shareData = { title: row.title ?? "Link Genie", url: shortUrl(row.slug) };
+                          const shareData = {
+                            title: row.title ?? "Link Genie",
+                            url: shortUrl(row.slug),
+                          };
                           if (navigator.share) await navigator.share(shareData).catch(() => {});
                           else {
                             await navigator.clipboard.writeText(shareData.url);
@@ -545,11 +566,7 @@ function Dashboard() {
                         icon={ExternalLink}
                         onClick={() => window.open(row.target_url, "_blank")}
                       />
-                      <IconButton
-                        label="Delete"
-                        icon={Trash2}
-                        onClick={() => removeLink(row.id)}
-                      />
+                      <IconButton label="Delete" icon={Trash2} onClick={() => removeLink(row.id)} />
                       <Switch
                         checked={row.is_active}
                         onCheckedChange={() => toggleActive(row as LinkRow)}
@@ -655,9 +672,7 @@ function QrDialog({
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>QR code</DialogTitle>
-          <DialogDescription>
-            Point a camera at this code to open /r/{link?.slug}
-          </DialogDescription>
+          <DialogDescription>Point a camera at this code to open /r/{link?.slug}</DialogDescription>
         </DialogHeader>
         {dataUrl ? (
           <img
