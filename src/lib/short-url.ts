@@ -10,8 +10,5 @@ export function isReservedAlias(slug: string) {
 }
 
 export function generateShortCode() {
-  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-";
-  return Array.from(crypto.getRandomValues(new Uint8Array(6)), (byte) => alphabet[byte & 63]).join(
-    "",
-  );
+  return crypto.randomUUID().replaceAll("-", "").slice(0, 10);
 }
