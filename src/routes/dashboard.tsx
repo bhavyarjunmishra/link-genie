@@ -1,3 +1,4 @@
+import { shortLinkPath } from "@/lib/short-url";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
@@ -205,7 +206,7 @@ function Dashboard() {
       setUrl("");
       setAlias("");
       setTitle("");
-      toast.success(`Short link /r/${created.slug} created`);
+      toast.success(`Short link ${shortLinkPath(created.slug)} created`);
       await queryClient.invalidateQueries({ queryKey: ["links"] });
     } catch (error) {
       toast.error(
@@ -235,7 +236,7 @@ function Dashboard() {
     }
   }
 
-  const shortUrl = (slug: string) => `${origin}/r/${slug}`;
+  const shortUrl = (slug: string) => `${origin}${shortLinkPath(slug)}`;
 
   return (
     <div className="min-h-screen">
@@ -274,7 +275,7 @@ function Dashboard() {
             <div className="space-y-2">
               <Label htmlFor="alias">Custom alias</Label>
               <div className="flex items-center rounded-md border border-input bg-transparent pl-3">
-                <span className="text-sm text-muted-foreground">/r/</span>
+                <span className="text-sm text-muted-foreground">/</span>
                 <Input
                   id="alias"
                   placeholder="spring-sale"
@@ -515,7 +516,7 @@ function Dashboard() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-display text-base font-semibold text-primary">
-                        /r/{row.slug}
+                        {shortLinkPath(row.slug)}
                       </span>
                       {row.title && <Badge variant="secondary">{row.title}</Badge>}
                       {!row.is_active && <Badge variant="outline">Paused</Badge>}
@@ -658,7 +659,7 @@ function QrDialog({
 
   useEffect(() => {
     if (!link) return;
-    QRCode.toDataURL(`${origin}/r/${link.slug}`, {
+    QRCode.toDataURL(`${origin}${shortLinkPath(link.slug)}`, {
       width: 640,
       margin: 1,
       color: { dark: "#0d0f16", light: "#ffffff" },
@@ -672,7 +673,9 @@ function QrDialog({
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>QR code</DialogTitle>
-          <DialogDescription>Point a camera at this code to open /r/{link?.slug}</DialogDescription>
+          <DialogDescription>
+            Point a camera at this code to open {link ? shortLinkPath(link.slug) : ""}
+          </DialogDescription>
         </DialogHeader>
         {dataUrl ? (
           <img

@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getCookie, setCookie, getRequest } from "@tanstack/react-start/server";
 import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
+import { generateShortCode, isReservedAlias } from "./short-url";
 
 async function storage() {
   const { db } = await import("../../db/index.js");
@@ -76,10 +77,12 @@ export const addLink = createServerFn({ method: "POST" })
     }),
   )
   .handler(async ({ data }) => {
+    if (isReservedAlias(data.alias)) throw new Error("That alias is reserved. Choose another.");
     const key = owner();
     const { db, links } = await storage();
     for (let attempt = 0; attempt < 5; attempt++) {
-      const slug = data.alias || crypto.randomUUID().replaceAll("-", "").slice(0, 10);
+      const slug = data.alias || generateShortCode();
+      if (isReservedAlias(slug)) continue;
       const [created] = await db
         .insert(links)
         .values({ owner: key, slug, target_url: data.target_url, title: data.title || null })
