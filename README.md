@@ -2,7 +2,7 @@
 
 Link-Genie is a modern, full-stack URL shortening utility built with an edge-first architecture. It delivers fast, globally distributed redirects and frictionless, anonymous link shortening with persistent database storage.
 
-🚀 **Live Deployment:** [https://link-genie.pages.dev](https://link-genie.pages.dev)  
+🚀 **Live Deployment:** [https://chic-lily-c197c3.netlify.app](https://chic-lily-c197c3.netlify.app/)
 📦 **Source Code:** [https://github.com/bhavyarjunmishra/link-genie](https://github.com/bhavyarjunmishra/link-genie)
 
 ---
