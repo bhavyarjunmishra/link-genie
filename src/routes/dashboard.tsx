@@ -552,7 +552,9 @@ function Dashboard() {
                           };
                           if (navigator.share) await navigator.share(shareData).catch(() => {});
                           else {
-                            await navigator.clipboard.writeText(shareData.url);
+                            await navigator.clipboard.writeText(
+                              shareData.url.replace(/^https?:\/\//i, ""),
+                            );
                             toast.success("Link copied — ready to share");
                           }
                         }}
@@ -635,7 +637,7 @@ function CopyButton({ value }: { value: string }) {
       aria-label="Copy short link"
       title="Copy short link"
       onClick={async () => {
-        await navigator.clipboard.writeText(value);
+        await navigator.clipboard.writeText(value.replace(/^https?:\/\//i, ""));
         setCopied(true);
         toast.success("Short link copied");
         setTimeout(() => setCopied(false), 1500);
