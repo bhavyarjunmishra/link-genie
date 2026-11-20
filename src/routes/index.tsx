@@ -42,7 +42,7 @@ const features = [
   {
     icon: Wand2,
     title: "Custom aliases",
-    body: "Claim readable slugs like /r/spring-sale so every link looks intentional, not random.",
+    body: "Claim readable slugs like /spring-sale so every link looks intentional, not random.",
   },
   {
     icon: QrCode,
@@ -86,7 +86,7 @@ function Landing() {
           .slice(0, 8)
           .replace(/[^a-z0-9]/gi, "")
       : "";
-    return `linkgenie.app/r/${seed || "your-alias"}`;
+    return `linkgenie.app/${seed || "your-alias"}`;
   }, [url]);
 
   return (
